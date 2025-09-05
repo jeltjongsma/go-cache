@@ -9,8 +9,8 @@ import (
 func TestNew(t *testing.T) {
 	opts, _ := context.NewOptions(2, policies.NewFIFO[int]())
 	c := New[int, string](opts)
-	if c.policy.Type() != policies.TypeFIFO {
-		t.Errorf("expected type=FIFO, got %v", c.policy.Type())
+	if ptype, _ := c.policy.Type(); ptype != policies.TypeFIFO {
+		t.Errorf("expected type=FIFO, got %v", ptype)
 	}
 
 	if opts != c.opts {
@@ -71,10 +71,11 @@ func TestSet_AttemptEvictNoVictim(t *testing.T) {
 	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
 	c := New[int, string](opts)
 
+	c.Set(1, "one")
+
 	// corrupt the policy to have no keys
 	c.policy = policies.NewFIFO[int]() // new empty policy
 
-	c.Set(1, "one")
 	ok := c.Set(2, "two")
 	if ok {
 		t.Fatalf("expected failure, got true")

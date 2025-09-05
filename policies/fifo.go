@@ -1,5 +1,7 @@
 package policies
 
+import "reflect"
+
 type FIFO[K comparable] struct {
 	keys []K
 }
@@ -36,6 +38,7 @@ func (p *FIFO[K]) Evict() (K, bool) {
 	return evictedKey, true
 }
 
-func (p *FIFO[K]) Type() PolicyType {
-	return TypeFIFO
+func (p *FIFO[K]) Type() (PolicyType, reflect.Type) {
+	t := reflect.TypeOf((*K)(nil)).Elem()
+	return TypeFIFO, t
 }

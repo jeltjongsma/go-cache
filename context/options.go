@@ -20,7 +20,10 @@ func NewOptions[K comparable](cap int, policy policies.Policy[K]) (*Options[K], 
 	}, nil
 }
 
-func (o *Options[K]) Equals(other *Options[K]) bool {
-	return o.Capacity == other.Capacity &&
-		o.Policy.Type() == other.Policy.Type()
+func (opts *Options[K]) Equals(o *Options[K]) bool {
+	optsPtype, optsKtype := opts.Policy.Type()
+	oPtype, oKtype := opts.Policy.Type()
+	return opts.Capacity == o.Capacity &&
+		optsPtype == oPtype &&
+		optsKtype == oKtype
 }

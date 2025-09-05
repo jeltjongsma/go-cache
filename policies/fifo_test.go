@@ -14,8 +14,19 @@ func TestNewFIFO(t *testing.T) {
 	}
 }
 
+func TestFIFO_Type(t *testing.T) {
+	p := NewFIFO[int]()
+	ptype, ktype := p.Type()
+	if ptype != TypeFIFO {
+		t.Errorf("expected 'FIFO', got %v", ptype)
+	}
+	if ktype.String() != "int" {
+		t.Errorf("expected 'int', got %s", ktype.String())
+	}
+}
+
 // no side effects
-func TestOnHit(t *testing.T) {
+func TestFIFO_OnHit(t *testing.T) {
 	p := NewFIFO[string]()
 	p.OnHit("")
 	if len(p.keys) != 0 {
@@ -23,7 +34,7 @@ func TestOnHit(t *testing.T) {
 	}
 }
 
-func TestOnSet(t *testing.T) {
+func TestFIFO_OnSet(t *testing.T) {
 	p := NewFIFO[string]()
 	p.OnSet("one")
 	if len(p.keys) != 1 {
@@ -41,7 +52,7 @@ func TestOnSet(t *testing.T) {
 	}
 }
 
-func TestOnSet_Repeat(t *testing.T) {
+func TestFIFO_OnSet_Repeat(t *testing.T) {
 	p := NewFIFO[string]()
 	p.OnSet("one")
 	if len(p.keys) != 1 {
@@ -59,7 +70,7 @@ func TestOnSet_Repeat(t *testing.T) {
 	}
 }
 
-func TestOnDel(t *testing.T) {
+func TestFIFO_OnDel(t *testing.T) {
 	p := NewFIFO[string]()
 	p.OnSet("one")
 	p.OnDel("one")
@@ -68,7 +79,7 @@ func TestOnDel(t *testing.T) {
 	}
 }
 
-func TestOnDel_MultipleValues(t *testing.T) {
+func TestFIFO_OnDel_MultipleValues(t *testing.T) {
 	p := NewFIFO[int]()
 	p.OnSet(1)
 	p.OnSet(2)
@@ -81,7 +92,7 @@ func TestOnDel_MultipleValues(t *testing.T) {
 	}
 }
 
-func TestEvict(t *testing.T) {
+func TestFIFO_Evict(t *testing.T) {
 	p := NewFIFO[int]()
 	p.OnSet(1)
 	p.OnSet(2)
@@ -100,7 +111,7 @@ func TestEvict(t *testing.T) {
 	}
 }
 
-func TestEvict_Empty(t *testing.T) {
+func TestFIFO_Evict_Empty(t *testing.T) {
 	p := NewFIFO[int]()
 	_, ok := p.Evict()
 	if ok {

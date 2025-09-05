@@ -1,15 +1,18 @@
 package policies
 
+import "reflect"
+
 type Policy[K comparable] interface {
 	OnHit(key K)
 	OnSet(key K)
 	OnDel(key K)
 	Evict() (K, bool)
-	Type() PolicyType
+	Type() (PolicyType, reflect.Type)
 }
 
-type PolicyType int
+type PolicyType string
 
 const (
-	TypeFIFO PolicyType = iota
+	TypeFIFO PolicyType = "FIFO"
+	TypeLRU  PolicyType = "LRU"
 )
