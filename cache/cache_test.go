@@ -7,7 +7,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	opts, _ := context.NewOptions(2, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(2, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 	if ptype, _ := c.policy.Type(); ptype != policies.TypeFIFO {
 		t.Errorf("expected type=FIFO, got %v", ptype)
@@ -19,7 +19,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestSet_NoEvict(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	ok := c.Set(1, "one")
@@ -41,7 +41,7 @@ func TestSet_NoEvict(t *testing.T) {
 }
 
 func TestSet_Evict(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	c.Set(1, "one")
@@ -68,7 +68,7 @@ func TestSet_Evict(t *testing.T) {
 }
 
 func TestSet_AttemptEvictNoVictim(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	c.Set(1, "one")
@@ -98,7 +98,7 @@ func TestSet_AttemptEvictNoVictim(t *testing.T) {
 }
 
 func TestSet_OutOfSyncPolicy(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	// corrupt the policy to have a key not in store
@@ -131,7 +131,7 @@ func TestSet_OutOfSyncPolicy(t *testing.T) {
 }
 
 func TestGet_Hit(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	c.Set(1, "one")
@@ -145,7 +145,7 @@ func TestGet_Hit(t *testing.T) {
 }
 
 func TestGet_Miss(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	ret, ok := c.Get(1)
@@ -159,7 +159,7 @@ func TestGet_Miss(t *testing.T) {
 }
 
 func TestDel(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	c.Set(1, "one")
@@ -178,7 +178,7 @@ func TestDel(t *testing.T) {
 }
 
 func TestDel_NotFound(t *testing.T) {
-	opts, _ := context.NewOptions(1, policies.NewFIFO[int]())
+	opts, _ := context.NewOptions(1, policies.NewFIFO[int](), 2)
 	c := New[int, string](opts)
 
 	ok := c.Del(1)

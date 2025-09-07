@@ -16,7 +16,7 @@ type Cache[K comparable, V any] struct {
 func New[K comparable, V any](opts *context.Options[K]) *Cache[K, V] {
 	return &Cache[K, V]{
 		opts:   opts,
-		store:  make(map[K]V, max(opts.Capacity, 0)),
+		store:  make(map[K]V, opts.Capacity),
 		policy: opts.Policy,
 	}
 }
