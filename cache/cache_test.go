@@ -7,12 +7,19 @@ import (
 
 // might fail, but that'd mean hash function is not distributing properly
 func TestCache_shardFor(t *testing.T) {
-	c := NewCache[int, string](
-		16,
-		100000,
-		nil,
-		context.NewHasher[int](nil),
+	opts := &context.Options[int]{
+		Capacity:  100000,
+		Policy:    nil,
+		NumShards: 16,
+		Hasher:    context.NewHasher[int](nil),
+	}
+	c, err := NewCache[int, string](
+		opts,
 	)
+
+	if err != nil {
+		t.Fatalf("unexpected error")
+	}
 
 	hit := make(map[int]struct{})
 	for i := range 1000000 {

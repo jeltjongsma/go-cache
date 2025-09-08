@@ -121,3 +121,9 @@ func (p LRU[K]) len() int {
 	}
 	return count
 }
+
+func (p *LRU[K]) Equals(o Policy[any]) bool {
+	pPtype, pKtype := p.Type()
+	oPtype, oKtype := p.Type()
+	return pPtype == oPtype && pKtype == oKtype
+}

@@ -42,3 +42,9 @@ func (p *FIFO[K]) Type() (PolicyType, reflect.Type) {
 	t := reflect.TypeOf((*K)(nil)).Elem()
 	return TypeFIFO, t
 }
+
+func (p *FIFO[K]) Equals(o Policy[any]) bool {
+	pPtype, pKtype := p.Type()
+	oPtype, oKtype := p.Type()
+	return pPtype == oPtype && pKtype == oKtype
+}

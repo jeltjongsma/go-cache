@@ -8,6 +8,7 @@ type Policy[K comparable] interface {
 	OnDel(key K)
 	Evict() (K, bool)
 	Type() (PolicyType, reflect.Type)
+	Equals(o Policy[any]) bool
 }
 
 type PolicyType string
