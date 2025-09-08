@@ -1,78 +1,50 @@
 package cache
 
+// TODO: Implement tests once more features are added (e.g. hooks for logging etc.)
 import (
 	"go-cache/context"
 	"go-cache/policies"
-	"sync"
 )
 
 type Cache[K comparable, V any] struct {
-	mu     sync.RWMutex
-	opts   *context.Options[K]
-	store  map[K]V
-	policy policies.Policy[K]
+	shards []*Shard[K, V]
+	hasher *context.Hasher[K]
 }
 
-func New[K comparable, V any](opts *context.Options[K]) *Cache[K, V] {
+func NewCache[K comparable, V any](
+	numShards uint64,
+	cap int,
+	policy policies.Policy[K],
+	hasher *context.Hasher[K],
+) *Cache[K, V] {
+	shards := make([]*Shard[K, V], numShards)
+	shardCap := cap / int(numShards)
+	for i := range numShards {
+		shards[i] = InitShard[K, V](policy, shardCap)
+	}
 	return &Cache[K, V]{
-		opts:   opts,
-		store:  make(map[K]V, opts.Capacity),
-		policy: opts.Policy,
+		shards: shards,
+		hasher: hasher,
 	}
 }
 
 func (c *Cache[K, V]) Set(key K, val V) (success bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	_, exists := c.store[key]
-
-	// if capacity = 0 the cache is considered unbounded
-	if !exists && c.opts.Capacity > 0 {
-		attempts := 0
-		for len(c.store) >= c.opts.Capacity {
-			victim, ok := c.policy.Evict()
-			if !ok {
-				return false // refuse insert
-			}
-			if _, present := c.store[victim]; present {
-				delete(c.store, victim)
-			} else {
-				// policy and store out of sync
-				attempts++
-				if attempts > c.opts.Capacity+1 {
-					return false // refuse insert on too many eviction attempts
-				}
-			}
-		}
-	}
-
-	c.store[key] = val
-	c.policy.OnSet(key)
-	return true
+	shard, _ := c.shardFor(key)
+	return shard.Set(key, val)
 }
 
 func (c *Cache[K, V]) Get(key K) (V, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	val, ok := c.store[key]
-	if !ok { // cache miss
-		var zero V
-		return zero, false
-	}
-	c.policy.OnHit(key)
-	return val, true
+	shard, _ := c.shardFor(key)
+	return shard.Get(key)
 }
 
 func (c *Cache[K, V]) Del(key K) (success bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	shard, _ := c.shardFor(key)
+	return shard.Del(key)
+}
 
-	if _, ok := c.store[key]; !ok {
-		return false
-	}
-	delete(c.store, key)
-	c.policy.OnDel(key)
-	return true
+// FIXME: Shouldn't return idx, but need it for tests for now
+func (c *Cache[K, V]) shardFor(key K) (*Shard[K, V], uint64) {
+	idx := c.hasher.Hash(key) % (uint64(len(c.shards)))
+	return c.shards[idx], idx
 }
