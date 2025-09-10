@@ -63,6 +63,11 @@ func (p *LRU[K]) Evict() (K, bool) {
 	return n.key, true
 }
 
+func (p *LRU[K]) Reset() {
+	clear(p.nodes)
+	p.Head, p.Tail = nil, nil
+}
+
 func (p *LRU[K]) detach(n *Node[K]) {
 	switch {
 	case n.prev == nil && n.next == nil:

@@ -21,7 +21,7 @@ func InitShard[K comparable, V any](policy policies.Policy[K], cap int) *Shard[K
 	}
 }
 
-func (s *Shard[K, V]) Set(key K, val V) bool {
+func (s *Shard[K, V]) Set(key K, val V) (success bool, evicted int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -32,14 +32,15 @@ func (s *Shard[K, V]) Set(key K, val V) bool {
 		for len(s.store) >= s.cap {
 			victim, ok := s.policy.Evict()
 			if !ok {
-				return false
+				return false, evicted
 			}
 			if _, present := s.store[victim]; present {
 				delete(s.store, victim)
+				evicted++ // only increases when evicted from store (not policy)
 			} else {
 				attempts++
 				if attempts > s.cap {
-					return false
+					return false, evicted
 				}
 			}
 		}
@@ -47,7 +48,7 @@ func (s *Shard[K, V]) Set(key K, val V) bool {
 
 	s.store[key] = val
 	s.policy.OnSet(key)
-	return true
+	return true, evicted
 }
 
 func (s *Shard[K, V]) Get(key K) (V, bool) {
@@ -63,6 +64,19 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 	return val, true
 }
 
+// no policy effects
+func (s *Shard[K, V]) Peek(key K) (V, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	val, ok := s.store[key]
+	if !ok {
+		var zero V
+		return zero, false
+	}
+	return val, true
+}
+
 func (s *Shard[K, V]) Del(key K) (success bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -73,6 +87,14 @@ func (s *Shard[K, V]) Del(key K) (success bool) {
 	delete(s.store, key)
 	s.policy.OnDel(key)
 	return true
+}
+
+func (s *Shard[K, V]) Flush() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	clear(s.store)
+	s.policy.Reset()
 }
 
 func (s *Shard[K, V]) Equals(o *Shard[K, V]) bool {

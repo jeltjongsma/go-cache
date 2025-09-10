@@ -12,6 +12,11 @@ func NewFIFO[K comparable]() *FIFO[K] {
 	}
 }
 
+func (p *FIFO[K]) Type() (PolicyType, reflect.Type) {
+	t := reflect.TypeOf((*K)(nil)).Elem()
+	return TypeFIFO, t
+}
+
 func (p *FIFO[K]) OnHit(key K) {
 	// No action needed on hit for FIFO
 }
@@ -38,9 +43,8 @@ func (p *FIFO[K]) Evict() (K, bool) {
 	return evictedKey, true
 }
 
-func (p *FIFO[K]) Type() (PolicyType, reflect.Type) {
-	t := reflect.TypeOf((*K)(nil)).Elem()
-	return TypeFIFO, t
+func (p *FIFO[K]) Reset() {
+	clear(p.keys)
 }
 
 func (p *FIFO[K]) Equals(o Policy[any]) bool {

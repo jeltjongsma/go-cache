@@ -17,9 +17,12 @@ func TestShard_InitShard(t *testing.T) {
 
 func TestShard_Set_NoEvict(t *testing.T) {
 	s := InitShard[int, string](policies.NewFIFO[int](), 2)
-	ok := s.Set(1, "one")
+	ok, evicted := s.Set(1, "one")
 	if !ok {
 		t.Fatalf("expected success, got %v", ok)
+	}
+	if evicted != 0 {
+		t.Fatalf("expected evicted=0, got %d", evicted)
 	}
 
 	// check effects
@@ -39,9 +42,12 @@ func TestShard_Set_Evict(t *testing.T) {
 	s := InitShard[int, string](policies.NewFIFO[int](), 1)
 
 	s.Set(1, "one")
-	ok := s.Set(2, "two")
+	ok, evicted := s.Set(2, "two")
 	if !ok {
 		t.Fatalf("expected success, got false")
+	}
+	if evicted != 1 {
+		t.Fatalf("expected evicted=1, got %d", evicted)
 	}
 
 	// check effects
@@ -69,9 +75,12 @@ func TestShard_Set_AttemptEvictNoVictim(t *testing.T) {
 	// corrupt the policy to have no keys
 	s.policy = policies.NewFIFO[int]() // new empty policy
 
-	ok := s.Set(2, "two")
+	ok, evicted := s.Set(2, "two")
 	if ok {
 		t.Fatalf("expected failure, got true")
+	}
+	if evicted != 0 {
+		t.Fatalf("expected evicted=0, got %d", evicted)
 	}
 	// check effects
 	if len(s.store) != 1 {
@@ -97,9 +106,13 @@ func TestShard_Set_OutOfSyncPolicy(t *testing.T) {
 	s.policy.OnSet(1) // policy has key=1, store is empty
 
 	s.Set(2, "two")
-	ok := s.Set(3, "three")
+	ok, evicted := s.Set(3, "three")
 	if !ok {
 		t.Fatalf("expected success, got false")
+	}
+	// evicted only counts evictions from store (not policy)
+	if evicted != 1 {
+		t.Fatalf("expected evicted=1, got %d", evicted)
 	}
 	// check effects
 	if len(s.store) != 1 {
@@ -148,6 +161,42 @@ func TestShard_Get_Miss(t *testing.T) {
 	}
 }
 
+func TestShard_Peek_Hit(t *testing.T) {
+	s := InitShard[int, string](policies.NewLRU[int](), 2)
+
+	s.Set(1, "one")
+	s.Set(2, "two")
+	ret, ok := s.Peek(1)
+	if !ok {
+		t.Fatalf("expected hit, got miss")
+	}
+	if ret != "one" {
+		t.Errorf("expected 'one', got %s", ret)
+	}
+
+	// peek shouldn't have side effects on policy, so '1' should still be victim
+	victim, ok := s.policy.Evict()
+	if !ok {
+		t.Fatalf("expected ok=true, got false")
+	}
+	if victim != 1 {
+		t.Errorf("expected victim=1, got %d", victim)
+	}
+}
+
+func TestShard_Peek_Miss(t *testing.T) {
+	s := InitShard[int, string](policies.NewFIFO[int](), 2)
+
+	ret, ok := s.Peek(1)
+	if ok {
+		t.Fatalf("expected miss, got hit")
+	}
+	var zero string
+	if ret != zero {
+		t.Errorf("expected zero value, got %s", ret)
+	}
+}
+
 func TestShard_Del(t *testing.T) {
 	s := InitShard[int, string](policies.NewFIFO[int](), 2)
 
@@ -180,5 +229,49 @@ func TestShard_Del_NotFound(t *testing.T) {
 	_, ok = s.store[1]
 	if ok {
 		t.Errorf("expected key=1 not found, got true")
+	}
+}
+
+func TestShard_Flush(t *testing.T) {
+	s := InitShard[int, int](policies.NewLRU[int](), 2)
+
+	s.Set(1, 1)
+	s.Set(2, 2)
+	s.Set(3, 3)
+	s.Set(4, 4)
+	s.Set(5, 5)
+
+	s.Flush()
+
+	// check effects
+	if len(s.store) != 0 {
+		t.Fatalf("expected store.len=0, got %d", len(s.store))
+	}
+	victim, ok := s.policy.Evict()
+	if ok {
+		t.Fatalf("expected ok=false, got true")
+	}
+	var zero int
+	if victim != zero {
+		t.Fatalf("expected zero value, got %v", victim)
+	}
+}
+
+func TestShard_Flush_AlreadyEmtpy(t *testing.T) {
+	s := InitShard[int, int](policies.NewLRU[int](), 2)
+
+	s.Flush()
+
+	// check effects
+	if len(s.store) != 0 {
+		t.Fatalf("expected store.len=0, got %d", len(s.store))
+	}
+	victim, ok := s.policy.Evict()
+	if ok {
+		t.Fatalf("expected ok=false, got true")
+	}
+	var zero int
+	if victim != zero {
+		t.Fatalf("expected zero value, got %v", victim)
 	}
 }
