@@ -6,7 +6,7 @@ import (
 
 type Options[K comparable] struct {
 	Capacity  int
-	Policy    policies.Policy[K]
+	Policy    policies.PolicyType
 	NumShards int
 	Hasher    *Hasher[K]
 }

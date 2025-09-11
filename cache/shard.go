@@ -47,7 +47,11 @@ func (s *Shard[K, V]) Set(key K, val V) (success bool, evicted int) {
 	}
 
 	s.store[key] = val
-	s.policy.OnSet(key)
+	if exists {
+		s.policy.OnHit(key)
+	} else {
+		s.policy.OnSet(key)
+	}
 	return true, evicted
 }
 

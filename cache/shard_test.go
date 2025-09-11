@@ -16,8 +16,17 @@ func TestShard_InitShard(t *testing.T) {
 }
 
 func TestShard_Set_NoEvict(t *testing.T) {
-	s := InitShard[int, string](policies.NewFIFO[int](), 2)
-	ok, evicted := s.Set(1, "one")
+	// check for success
+	s := InitShard[int, int](policies.NewFIFO[int](), 100)
+	for i := range 10000 {
+		ok, _ := s.Set(i, i)
+		if !ok {
+			t.Fatalf("expected true, got false")
+		}
+	}
+
+	s = InitShard[int, int](policies.NewFIFO[int](), 2)
+	ok, evicted := s.Set(1, 1)
 	if !ok {
 		t.Fatalf("expected success, got %v", ok)
 	}
@@ -33,8 +42,8 @@ func TestShard_Set_NoEvict(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected key=1 found, got false")
 	}
-	if ret != "one" {
-		t.Errorf("expected 'one', got %s", ret)
+	if ret != 1 {
+		t.Errorf("expected '1', got %d", ret)
 	}
 }
 
@@ -136,28 +145,41 @@ func TestShard_Set_OutOfSyncPolicy(t *testing.T) {
 }
 
 func TestShard_Get_Hit(t *testing.T) {
-	s := InitShard[int, string](policies.NewFIFO[int](), 2)
+	s := InitShard[int, int](policies.NewFIFO[int](), 100)
 
-	s.Set(1, "one")
-	ret, ok := s.Get(1)
-	if !ok {
-		t.Fatalf("expected hit, got miss")
+	// fill shard
+	for i := range 100 {
+		s.Set(i, i)
 	}
-	if ret != "one" {
-		t.Errorf("expected 'one', got %s", ret)
+
+	// test if all are hit
+	for i := range 100 {
+		ret, ok := s.Get(i)
+		if !ok {
+			t.Fatalf("expected hit, got miss")
+		}
+		if ret != i {
+			t.Errorf("expected '%d', got %d", i, ret)
+		}
 	}
 }
 
 func TestShard_Get_Miss(t *testing.T) {
-	s := InitShard[int, string](policies.NewFIFO[int](), 2)
+	s := InitShard[int, int](policies.NewFIFO[int](), 100)
 
-	ret, ok := s.Get(1)
-	if ok {
-		t.Fatalf("expected miss, got hit")
+	for i := range 50 {
+		s.Set(i, i)
 	}
-	var zero string
-	if ret != zero {
-		t.Errorf("expected zero value, got %s", ret)
+
+	for i := 50; i < 100; i++ {
+		ret, ok := s.Get(i)
+		if ok {
+			t.Fatalf("expected miss, got hit")
+		}
+		var zero int
+		if ret != zero {
+			t.Errorf("expected zero value, got %d", ret)
+		}
 	}
 }
 

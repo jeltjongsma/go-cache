@@ -2,8 +2,10 @@ package cache
 
 // TODO: Implement tests once more features are added (e.g. hooks for logging etc.)
 import (
+	"errors"
 	"fmt"
 	"go-cache/context"
+	"go-cache/policies"
 	"runtime"
 	"sync"
 )
@@ -25,12 +27,24 @@ func NewCache[K comparable, V any](
 	if uint64(opts.NumShards)&uint64((opts.NumShards-1)) != 0 {
 		return nil, fmt.Errorf("num shards (%d) must be exponential of 2", opts.NumShards)
 	}
+	if opts.Hasher == nil {
+		return nil, errors.New("hasher must not be nil")
+	}
 
 	// init shards
 	shards := make([]*Shard[K, V], opts.NumShards)
 	shardCap := opts.Capacity / int(opts.NumShards)
 	for i := range opts.NumShards {
-		shards[i] = InitShard[K, V](opts.Policy, shardCap)
+		var pol policies.Policy[K]
+		switch opts.Policy {
+		case policies.TypeFIFO:
+			pol = policies.NewFIFO[K]()
+		case policies.TypeLRU:
+			pol = policies.NewLRU[K]()
+		default:
+			return nil, fmt.Errorf("invalid policy type: %s", opts.Policy)
+		}
+		shards[i] = InitShard[K, V](pol, shardCap)
 	}
 
 	// init cache
@@ -45,9 +59,7 @@ func NewCache[K comparable, V any](
 func (c *Cache[K, V]) Set(key K, val V) (success bool, evicted int) {
 	shard, _ := c.shardFor(key)
 	success, evicted = shard.Set(key, val)
-	if evicted > 0 {
-		c.stats.Evictions.Add(1)
-	}
+	c.stats.Evictions.Add(uint64(evicted))
 	return
 }
 
