@@ -3,7 +3,6 @@ package cache
 import (
 	"go-cache/context"
 	"go-cache/policies"
-	"strconv"
 	"testing"
 )
 
@@ -79,12 +78,11 @@ func TestCache_New(t *testing.T) {
 }
 
 func TestCache_Set(t *testing.T) {
-	c, err := NewCache[int, int](&context.Options[int]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	})
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(100).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -103,12 +101,11 @@ func TestCache_Set(t *testing.T) {
 }
 
 func TestCache_Get(t *testing.T) {
-	c, err := NewCache[int, int](&context.Options[int]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	})
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(100).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -142,12 +139,11 @@ func TestCache_Get(t *testing.T) {
 }
 
 func TestCache_Peek(t *testing.T) {
-	c, err := NewCache[int, int](&context.Options[int]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	})
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(100).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -170,12 +166,11 @@ func TestCache_Peek(t *testing.T) {
 }
 
 func TestCache_Del(t *testing.T) {
-	c, err := NewCache[int, int](&context.Options[int]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	})
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(100).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -198,12 +193,11 @@ func TestCache_Del(t *testing.T) {
 }
 
 func TestCache_Flush(t *testing.T) {
-	c, err := NewCache[int, int](&context.Options[int]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	})
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(100).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -229,16 +223,11 @@ func TestCache_Flush(t *testing.T) {
 
 // might fail, but that'd mean hash function is not distributing properly
 func TestCache_shardFor(t *testing.T) {
-	opts := &context.Options[int]{
-		Capacity:  100000,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	}
-	c, err := NewCache[int, string](
-		opts,
-	)
-
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(10000).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -263,20 +252,18 @@ func TestCache_shardFor(t *testing.T) {
 // FIXME: Can't predict all keys are actually being set, due to hash function
 // Can't check if something got evicted so can't count properly still
 func TestCache_Len(t *testing.T) {
-	opts := &context.Options[int]{
-		Capacity:  50,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    context.NewHasher[int](nil),
-	}
-	c, err := NewCache[int, string](opts)
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(50).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(16).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	count := 0
 	for i := range 80 {
-		succ, evicted := c.Set(i, strconv.Itoa(i))
+		succ, evicted := c.Set(i, i)
 		count -= evicted
 		if succ {
 			count++
@@ -296,13 +283,11 @@ func TestCache_Len(t *testing.T) {
 }
 
 func TestCache_Stats(t *testing.T) {
-	opts := &context.Options[int]{
-		Capacity:  5,
-		Policy:    policies.TypeFIFO,
-		NumShards: 1,
-		Hasher:    context.NewHasher[int](nil),
-	}
-	c, err := NewCache[int, int](opts)
+	c, err := NewCache[int, int](context.NewOptions[int]().
+		SetCapacity(5).
+		SetPolicy(policies.TypeFIFO).
+		SetNumShards(1).
+		SetHasher(context.NewHasher[int](nil)))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
