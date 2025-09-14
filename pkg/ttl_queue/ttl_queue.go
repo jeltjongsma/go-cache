@@ -1,4 +1,4 @@
-package pkg
+package ttl_queue
 
 import (
 	"container/heap"
@@ -12,6 +12,10 @@ type Entry[K comparable] struct {
 	seq       uint64
 }
 
+// Invariants:
+//   - keys maps each K present in queue to its Entry.
+//   - entry.index is the current position in queue, or -1 when not present.
+//   - Less orders by (expiresAt, seq) ascending ⇒ min-heap.
 type TTLQueue[K comparable] struct {
 	queue []*Entry[K]
 	ttl   time.Duration
@@ -21,12 +25,14 @@ type TTLQueue[K comparable] struct {
 }
 
 func NewTTLQueue[K comparable](defaultTTL time.Duration) *TTLQueue[K] {
-	return &TTLQueue[K]{
+	q := &TTLQueue[K]{
 		ttl:  defaultTTL,
 		keys: make(map[K]*Entry[K]),
 		now:  time.Now,
 		seq:  0,
 	}
+	heap.Init(q)
+	return q
 }
 
 func (t *TTLQueue[K]) Len() int {
@@ -73,6 +79,7 @@ func (t *TTLQueue[K]) PushStd(k K) {
 	heap.Push(t, entry)
 }
 
+// called by container/heap (never use yourself)
 func (t *TTLQueue[K]) Push(x any) {
 	t.seq++
 	entry := x.(*Entry[K])
@@ -82,6 +89,11 @@ func (t *TTLQueue[K]) Push(x any) {
 	t.queue = append(t.queue, entry)
 }
 
+func (t *TTLQueue[K]) PopMin() *Entry[K] {
+	return heap.Pop(t).(*Entry[K])
+}
+
+// called by container/heap (never use yourself)
 func (t *TTLQueue[K]) Pop() any {
 	l := len(t.queue)
 	entry := t.queue[l-1]
@@ -105,6 +117,8 @@ func (t *TTLQueue[K]) Update(k K, ttl time.Duration) bool {
 		return false
 	}
 	entry.expiresAt = t.now().Add(ttl)
+	t.seq++
+	entry.seq = t.seq
 	heap.Fix(t, entry.index)
 	return true
 }
@@ -116,4 +130,13 @@ func (t *TTLQueue[K]) Remove(k K) bool {
 	}
 	heap.Remove(t, entry.index)
 	return true
+}
+
+func (t *TTLQueue[K]) Reset() {
+	for i := range t.queue {
+		t.queue[i] = nil
+	}
+	t.queue = t.queue[:0]
+	clear(t.keys)
+	t.seq = 0
 }
