@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"go-cache/context"
-	"go-cache/policies"
+	"go-cache/internal/context"
+	"go-cache/internal/policies"
 	"testing"
 )
 

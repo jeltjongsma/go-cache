@@ -4,8 +4,8 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"go-cache/context"
-	"go-cache/policies"
+	"go-cache/internal/context"
+	"go-cache/internal/policies"
 	"runtime"
 	"sync"
 )

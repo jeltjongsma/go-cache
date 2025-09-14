@@ -1,7 +1,7 @@
 package context
 
 import (
-	"go-cache/policies"
+	"go-cache/internal/policies"
 )
 
 type Options[K comparable] struct {
