@@ -2,21 +2,24 @@ package context
 
 import (
 	"go-cache/internal/policies"
+	"time"
 )
 
 type Options[K comparable] struct {
-	Capacity  int
-	Policy    policies.PolicyType
-	NumShards int
-	Hasher    *Hasher[K]
+	Capacity   int
+	Policy     policies.PolicyType
+	NumShards  int
+	Hasher     *Hasher[K]
+	DefaultTTL time.Duration
 }
 
 func NewOptions[K comparable]() *Options[K] {
 	return &Options[K]{
-		Capacity:  100,
-		Policy:    policies.TypeFIFO,
-		NumShards: 16,
-		Hasher:    NewHasher[K](nil),
+		Capacity:   100,
+		Policy:     policies.TypeFIFO,
+		NumShards:  16,
+		Hasher:     NewHasher[K](nil),
+		DefaultTTL: 300_000,
 	}
 }
 

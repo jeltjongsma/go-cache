@@ -42,6 +42,12 @@ func TestCache_New(t *testing.T) {
 			NumShards: 2,
 			Hasher:    nil,
 		}, true},
+		{"0 shards", &context.Options[int]{
+			Capacity:  2,
+			Policy:    policies.TypeFIFO,
+			NumShards: 0,
+			Hasher:    context.NewHasher[int](nil),
+		}, true},
 	}
 
 	for _, tt := range tests {
@@ -64,7 +70,7 @@ func TestCache_New(t *testing.T) {
 						t.Errorf("expected c.cap==tt.cap, got %d!=%d", c.opts.Capacity, tt.opts.Capacity)
 					}
 				}
-				if len(c.shards) != 2 {
+				if len(c.shards) != tt.opts.NumShards {
 					t.Fatalf("expected len(c.shards)=2, got %d", len(c.shards))
 				}
 				for i, s := range c.shards {

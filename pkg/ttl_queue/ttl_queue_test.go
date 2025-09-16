@@ -51,15 +51,15 @@ func TestLess(t *testing.T) {
 
 func TestSwap(t *testing.T) {
 	q := NewTTLQueue[int](100)
-	q.queue = []*Entry[int]{{k: 1, index: 0}, {k: 2, index: 1}}
+	q.queue = []*Entry[int]{{K: 1, index: 0}, {K: 2, index: 1}}
 
 	q.Swap(0, 1)
 
-	if x := q.queue[0]; x.k != 2 || x.index != 0 {
-		t.Errorf("expected k=2 & idx=0, got %d, %d", x.k, x.index)
+	if x := q.queue[0]; x.K != 2 || x.index != 0 {
+		t.Errorf("expected k=2 & idx=0, got %d, %d", x.K, x.index)
 	}
-	if x := q.queue[1]; x.k != 1 || x.index != 1 {
-		t.Errorf("expected k=1 & idx=1, got %d, %d", x.k, x.index)
+	if x := q.queue[1]; x.K != 1 || x.index != 1 {
+		t.Errorf("expected k=1 & idx=1, got %d, %d", x.K, x.index)
 	}
 }
 
@@ -70,7 +70,7 @@ func TestPush(t *testing.T) {
 		return n
 	}
 	e := &Entry[int]{
-		k:         1,
+		K:         1,
 		expiresAt: q.now(),
 	}
 
@@ -86,8 +86,8 @@ func TestPush(t *testing.T) {
 	if got.index != 0 {
 		t.Errorf("expected idx=0, got %d", got.index)
 	}
-	if got.k != 1 {
-		t.Errorf("expected k=1, got %d", got.k)
+	if got.K != 1 {
+		t.Errorf("expected k=1, got %d", got.K)
 	}
 	if !got.expiresAt.Equal(e.expiresAt) {
 		t.Errorf("got different expiresAt's")
@@ -110,8 +110,8 @@ func TestPushWithTTL_NewEntry(t *testing.T) {
 		t.Fatalf("expected len=1, got %d", len(q.queue))
 	}
 	got := q.queue[0]
-	if got.k != 1 {
-		t.Errorf("expected k=1, got %d", got.k)
+	if got.K != 1 {
+		t.Errorf("expected k=1, got %d", got.K)
 	}
 	if !got.expiresAt.Equal(n.Add(50)) {
 		t.Errorf("expected ttl + 50, got %v", got.expiresAt)
@@ -132,8 +132,8 @@ func TestPushWithTTL_Duplicate(t *testing.T) {
 		t.Fatalf("expected len=1, got %d", len(q.queue))
 	}
 	got := q.queue[0]
-	if got.k != 1 {
-		t.Errorf("expected k=1, got %d", got.k)
+	if got.K != 1 {
+		t.Errorf("expected k=1, got %d", got.K)
 	}
 	if !got.expiresAt.Equal(n.Add(50)) {
 		t.Errorf("expected ttl + 50, got %v", got.expiresAt)
@@ -153,8 +153,8 @@ func TestPushStd_NewEntry(t *testing.T) {
 		t.Fatalf("expected len=1, got %d", len(q.queue))
 	}
 	got := q.queue[0]
-	if got.k != 1 {
-		t.Errorf("expected k=1, got %d", got.k)
+	if got.K != 1 {
+		t.Errorf("expected k=1, got %d", got.K)
 	}
 	if !got.expiresAt.Equal(n.Add(100)) {
 		t.Errorf("expected ttl + 100, got %v", got.expiresAt)
@@ -175,8 +175,8 @@ func TestPushStd_Duplicate(t *testing.T) {
 		t.Fatalf("expected len=1, got %d", len(q.queue))
 	}
 	got := q.queue[0]
-	if got.k != 1 {
-		t.Errorf("expected k=1, got %d", got.k)
+	if got.K != 1 {
+		t.Errorf("expected k=1, got %d", got.K)
 	}
 	if !got.expiresAt.Equal(n.Add(100)) {
 		t.Errorf("expected ttl + 100, got %v", got.expiresAt)
@@ -193,8 +193,8 @@ func TestPopMin(t *testing.T) {
 	q.PushStd(1)
 	e := q.PopMin()
 
-	if e.k != 1 {
-		t.Errorf("expected k=1, got %d", e.k)
+	if e.K != 1 {
+		t.Errorf("expected k=1, got %d", e.K)
 	}
 	if len(q.queue) != 0 {
 		t.Errorf("expected len=0, got %d", len(q.queue))
@@ -223,8 +223,8 @@ func TestPeek(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected true, got false")
 	}
-	if e.k != 1 {
-		t.Errorf("expected k=1, got %d", e.k)
+	if e.K != 1 {
+		t.Errorf("expected k=1, got %d", e.K)
 	}
 	if len(q.queue) != 1 {
 		t.Errorf("expected len=1, got %d", len(q.queue))
@@ -234,6 +234,36 @@ func TestPeek(t *testing.T) {
 	}
 	if e.index != 0 {
 		t.Errorf("expected index=0, got %d", e.index)
+	}
+}
+
+func TestHasExpired(t *testing.T) {
+	q := NewTTLQueue[int](100)
+	n := time.Now()
+	q.now = func() time.Time {
+		return n
+	}
+
+	q.queue = []*Entry[int]{
+		{expiresAt: n.Add(-50)},
+		{expiresAt: n},
+		{expiresAt: n.Add(50)},
+	}
+
+	if !q.HasExpired() {
+		t.Fatalf("expected true, got false")
+	}
+	q.PopMin()
+	if !q.HasExpired() {
+		t.Fatalf("expected true, got false")
+	}
+	q.PopMin()
+	if q.HasExpired() {
+		t.Fatalf("expected false, got true")
+	}
+	q.PopMin()
+	if q.HasExpired() {
+		t.Fatalf("expected false, got true")
 	}
 }
 
@@ -320,8 +350,8 @@ func TestTTLQueue(t *testing.T) {
 
 	for i := range 50 {
 		e := q.PopMin()
-		if e.k != i {
-			t.Errorf("expected k=%d, got %d", i, e.k)
+		if e.K != i {
+			t.Errorf("expected k=%d, got %d", i, e.K)
 		}
 	}
 
@@ -333,8 +363,8 @@ func TestTTLQueue(t *testing.T) {
 	}
 
 	for i := range 50 {
-		if e := q.PopMin(); e.k != i {
-			t.Errorf("expected k=%d, got %d", i, e.k)
+		if e := q.PopMin(); e.K != i {
+			t.Errorf("expected k=%d, got %d", i, e.K)
 		}
 	}
 
@@ -350,14 +380,24 @@ func TestTTLQueue(t *testing.T) {
 	}
 
 	for i := range 10 {
-		if e := q.PopMin(); e.k != i {
-			t.Errorf("expected k=%d, got %d", i, e.k)
+		if e := q.PopMin(); e.K != i {
+			t.Errorf("expected k=%d, got %d", i, e.K)
 		}
 	}
 
 	for i := range 10 {
-		if e := q.PopMin(); e.k != i+10 {
-			t.Errorf("expected k=%d, got %d", i+10, e.k)
+		if e := q.PopMin(); e.K != i+10 {
+			t.Errorf("expected k=%d, got %d", i+10, e.K)
 		}
+	}
+}
+
+func TestSetNow(t *testing.T) {
+	q := NewTTLQueue[int](100)
+	n := time.Now()
+	q.SetNow(func() time.Time { return n })
+
+	if !q.now().Equal(n) {
+		t.Errorf("now not set")
 	}
 }

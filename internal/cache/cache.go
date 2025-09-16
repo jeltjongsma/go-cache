@@ -24,6 +24,9 @@ func NewCache[K comparable, V any](
 	if opts.Capacity < 0 {
 		opts.Capacity = 0
 	}
+	if opts.NumShards <= 0 {
+		return nil, fmt.Errorf("num shards (%d) must be >0", opts.NumShards)
+	}
 	if uint64(opts.NumShards)&uint64((opts.NumShards-1)) != 0 {
 		return nil, fmt.Errorf("num shards (%d) must be exponential of 2", opts.NumShards)
 	}
@@ -44,7 +47,7 @@ func NewCache[K comparable, V any](
 		default:
 			return nil, fmt.Errorf("invalid policy type: %s", opts.Policy)
 		}
-		shards[i] = InitShard[K, V](pol, shardCap)
+		shards[i] = InitShard[K, V](pol, shardCap, opts.DefaultTTL)
 	}
 
 	// init cache
