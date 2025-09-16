@@ -106,6 +106,7 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 		return zero, false
 	}
 
+	// only ran on hits
 	budget := 4
 	for i := 0; i < budget; i++ {
 		if !s.expiry.HasExpired() {
