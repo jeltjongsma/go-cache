@@ -52,3 +52,7 @@ func (p *FIFO[K]) Equals(o Policy[any]) bool {
 	oPtype, oKtype := p.Type()
 	return pPtype == oPtype && pKtype == oKtype
 }
+
+func (p *FIFO[K]) Len() int {
+	return len(p.keys)
+}

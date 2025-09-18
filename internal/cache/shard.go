@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"errors"
 	"go-cache/internal/policies"
 	"go-cache/pkg/ttl_queue"
 	"reflect"
@@ -23,7 +24,6 @@ type Shard[K comparable, V any] struct {
 	now        func() time.Time
 }
 
-// TODO: Clean up
 func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) *Shard[K, V] {
 	return &Shard[K, V]{
 		store:      make(map[K]Entry[V], cap),
@@ -40,7 +40,9 @@ func (s *Shard[K, V]) SetWithTTL(key K, val V, ttl time.Duration) (success bool,
 		val:       val,
 		expiresAt: s.now().Add(ttl),
 	}
+	s.mu.Lock()
 	s.expiry.PushWithTTL(key, ttl)
+	s.mu.Unlock()
 	return s.set(key, entry)
 }
 
@@ -49,7 +51,9 @@ func (s *Shard[K, V]) Set(key K, val V) (success bool, evicted int) {
 		val:       val,
 		expiresAt: s.now().Add(s.defaultTTL),
 	}
+	s.mu.Lock()
 	s.expiry.PushStd(key)
+	s.mu.Unlock()
 	return s.set(key, entry)
 }
 
@@ -169,4 +173,17 @@ func (s *Shard[K, V]) Equals(o *Shard[K, V]) bool {
 func (s *Shard[K, V]) setNow(now func() time.Time) {
 	s.now = now
 	s.expiry.SetNow(now)
+}
+
+func (s *Shard[K, V]) validate() error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.expiry.Len() < len(s.store) {
+		return errors.New("expiry out of sync")
+	}
+	if len(s.store) != s.policy.Len() {
+		return errors.New("policy out of sync")
+	}
+	return nil
 }

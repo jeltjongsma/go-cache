@@ -131,7 +131,7 @@ func TestLRU_detach(t *testing.T) {
 
 	// detach middle
 	p.detach(p.nodes[3])
-	if p.len() != 3 {
+	if p.Len() != 3 {
 		t.Fatalf("expected len=3, got %d", len(p.nodes))
 	}
 	if p.Head.key != 4 {
@@ -142,7 +142,7 @@ func TestLRU_detach(t *testing.T) {
 	}
 	// detach tail
 	p.detach(p.Tail)
-	if p.len() != 2 {
+	if p.Len() != 2 {
 		t.Fatalf("expected len=2, got %d", len(p.nodes))
 	}
 	if p.Head.key != 4 {
@@ -153,7 +153,7 @@ func TestLRU_detach(t *testing.T) {
 	}
 	// detach head
 	p.detach(p.Head)
-	if p.len() != 1 {
+	if p.Len() != 1 {
 		t.Fatalf("expected len=1, got %d", len(p.nodes))
 	}
 	if p.Head.key != 2 {
@@ -164,7 +164,7 @@ func TestLRU_detach(t *testing.T) {
 	}
 	// detach only node
 	p.detach(p.Head)
-	if p.len() != 0 {
+	if p.Len() != 0 {
 		t.Fatalf("expected len=0, got %d", len(p.nodes))
 	}
 	if p.Head != nil {
@@ -198,7 +198,7 @@ func TestLRU_insertFront(t *testing.T) {
 	if p.Tail.key != 1 {
 		t.Errorf("expected tail = 1, got %v", p.Tail)
 	}
-	if p.len() != 3 {
+	if p.Len() != 3 {
 		t.Errorf("expected len=3, got %d", len(p.nodes))
 	}
 }
@@ -251,7 +251,7 @@ func TestLRU_Validate(t *testing.T) {
 	if err := p.Validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
-	if p.len() != 0 {
+	if p.Len() != 0 {
 		t.Errorf("expected len=0, got %d", len(p.nodes))
 	}
 	if p.Head != nil {
@@ -262,5 +262,16 @@ func TestLRU_Validate(t *testing.T) {
 	}
 	if len(p.nodes) != 0 {
 		t.Errorf("expected len=0, got %d", len(p.nodes))
+	}
+}
+
+func TestLRU_Len(t *testing.T) {
+	p := NewLRU[int]()
+	p.OnSet(1)
+	p.OnSet(2)
+	p.OnSet(3)
+
+	if p.Len() != 3 {
+		t.Errorf("expected 3, got %d", p.Len())
 	}
 }

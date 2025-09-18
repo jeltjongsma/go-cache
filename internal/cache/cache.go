@@ -133,8 +133,16 @@ func (c *Cache[K, V]) Stats() *StatsSnapshot {
 	}
 }
 
-// FIXME: Shouldn't return idx, but need it for tests for now
 func (c *Cache[K, V]) shardFor(key K) (*Shard[K, V], uint64) {
 	idx := c.hasher.Hash(key) % (uint64(len(c.shards)))
 	return c.shards[idx], idx
+}
+
+func (c *Cache[K, V]) validate() error {
+	for _, s := range c.shards {
+		if err := s.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

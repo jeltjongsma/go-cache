@@ -10,6 +10,7 @@ type Policy[K comparable] interface {
 	Evict() (K, bool)
 	Reset()
 	Equals(Policy[any]) bool
+	Len() int
 }
 
 type PolicyType string

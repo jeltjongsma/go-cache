@@ -118,3 +118,14 @@ func TestFIFO_Evict_Empty(t *testing.T) {
 		t.Errorf("expected evict=false, got %v", ok)
 	}
 }
+
+func TestFIFO_Len(t *testing.T) {
+	p := NewFIFO[int]()
+	p.OnSet(1)
+	p.OnSet(2)
+	p.OnSet(3)
+
+	if p.Len() != 3 {
+		t.Errorf("expected 3, got %d", p.Len())
+	}
+}

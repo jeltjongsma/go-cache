@@ -117,7 +117,7 @@ func (p *LRU[K]) Validate() error {
 	return nil
 }
 
-func (p LRU[K]) len() int {
+func (p LRU[K]) Len() int {
 	count := 0
 	current := p.Head
 	for current != nil {
