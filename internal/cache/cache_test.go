@@ -73,11 +73,6 @@ func TestCache_New(t *testing.T) {
 				if len(c.shards) != tt.opts.NumShards {
 					t.Fatalf("expected len(c.shards)=2, got %d", len(c.shards))
 				}
-				for i, s := range c.shards {
-					if s == nil {
-						t.Fatalf("shard %d is nil", i)
-					}
-				}
 			}
 		})
 	}

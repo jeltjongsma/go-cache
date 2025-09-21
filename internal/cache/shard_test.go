@@ -288,6 +288,31 @@ func TestShard_Get_ExpiryBudget(t *testing.T) {
 	}
 }
 
+func TestShard_Get_NoTTL(t *testing.T) {
+	s := InitShard[int, int](policies.NewLRU[int](), 10, 0)
+	n := time.Now()
+	s.setNow(func() time.Time { return n })
+
+	s.SetWithTTL(1, 1, -50)
+	s.SetWithTTL(2, 2, 50)
+
+	s.Get(2) // hit, but DefaultTTL == 0: shouldn't run cleanup
+
+	if !s.expiry.HasExpired() {
+		t.Fatalf("expected true, got false")
+	}
+	if l := s.expiry.Len(); l != 2 { // 1, 2
+		t.Fatalf("expected len=2, got %d", l)
+	}
+	e, ok := s.expiry.Peek()
+	if !ok {
+		t.Fatalf("expected true, got false")
+	}
+	if e.K != 1 {
+		t.Errorf("expected k=1, got %d", e.K)
+	}
+}
+
 func TestShard_Peek_Hit(t *testing.T) {
 	s := InitShard[int, string](policies.NewLRU[int](), 2, 100)
 

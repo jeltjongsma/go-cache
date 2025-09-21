@@ -39,7 +39,7 @@ func TestLRU_OnHit(t *testing.T) {
 		t.Errorf("expected len=2, got %d", len(p.nodes))
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 
@@ -52,7 +52,7 @@ func TestLRU_OnHit(t *testing.T) {
 		t.Errorf("expected len=1, got %d", len(p.nodes))
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 }
@@ -64,7 +64,7 @@ func TestLRU_OnSet(t *testing.T) {
 		p.OnSet(i)
 	}
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 
@@ -89,7 +89,7 @@ func TestLRU_OnSet_Duplicate(t *testing.T) {
 	p.OnSet(2)
 	p.OnSet(1)
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 
@@ -109,7 +109,7 @@ func TestLRU_OnDel(t *testing.T) {
 
 	p.OnDel(1)
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 
@@ -203,16 +203,16 @@ func TestLRU_insertFront(t *testing.T) {
 	}
 }
 
-func TestLRU_Validate(t *testing.T) {
+func TestLRU_validate(t *testing.T) {
 	p := NewLRU[int]()
 	p.OnSet(1)
 	p.OnSet(2)
 	p.OnSet(3)
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 	p.nodes[4] = &Node[int]{key: 4} // add node not in list
-	if err := p.Validate(); err == nil {
+	if err := p.validate(); err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 	// reset
@@ -223,7 +223,7 @@ func TestLRU_Validate(t *testing.T) {
 	p.OnSet(4)
 
 	delete(p.nodes, 2) // remove node in list
-	if err := p.Validate(); err == nil {
+	if err := p.validate(); err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 
@@ -235,11 +235,11 @@ func TestLRU_Validate(t *testing.T) {
 	p.OnSet(4)
 
 	p.Tail.next = &Node[int]{key: 5} // corrupt list
-	if err := p.Validate(); err == nil {
+	if err := p.validate(); err == nil {
 		t.Fatalf("expected error, got nil")
 	}
 	p.Tail.next = nil
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 	// remove all nodes
@@ -248,7 +248,7 @@ func TestLRU_Validate(t *testing.T) {
 	p.OnDel(3)
 	p.OnDel(4)
 
-	if err := p.Validate(); err != nil {
+	if err := p.validate(); err != nil {
 		t.Fatalf("policy not valid: %v", err)
 	}
 	if p.Len() != 0 {

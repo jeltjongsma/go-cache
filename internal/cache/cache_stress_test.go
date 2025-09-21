@@ -54,3 +54,80 @@ func TestCache(t *testing.T) {
 	}
 	close(jobs)
 }
+
+type mm[K comparable, V any] struct {
+	store map[K]V
+	mu    sync.RWMutex
+}
+
+func BenchmarkBaselineSet(b *testing.B) {
+	bl := mm[int, int]{store: make(map[int]int, b.N)}
+	var k int
+	b.ResetTimer()
+	for i := range b.N {
+		k++
+		bl.mu.Lock()
+		bl.store[k] = i
+		bl.mu.Unlock()
+	}
+}
+
+var sink int
+
+func BenchmarkBaselineGet(b *testing.B) {
+	bl := mm[int, int]{store: make(map[int]int, b.N)}
+
+	const N = 1 << 16
+	for i := range N {
+		bl.store[i] = i
+	}
+
+	mask := N - 1
+
+	b.ResetTimer()
+	for i := range b.N {
+		sink = bl.store[i%mask]
+	}
+}
+
+func BenchmarkSet(b *testing.B) {
+	opts := context.NewOptions[int]().
+		SetCapacity(b.N).
+		SetPolicy(policies.TypeLRU).
+		SetNumShards(128)
+	c, err := NewCache[int, int](opts)
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
+
+	b.ResetTimer()
+	for i := range b.N {
+		c.Set(i, i)
+	}
+}
+
+func BenchmarkGet(b *testing.B) {
+	opts := context.NewOptions[int]().
+		SetCapacity(b.N).
+		SetPolicy(policies.TypeLRU).
+		SetNumShards(128).
+		SetDefaultTTL(10)
+	c, err := NewCache[int, int](opts)
+	if err != nil {
+		b.Fatalf("unexpected error: %v", err)
+	}
+
+	const N = 1 << 16
+	for i := range N {
+		if i%4 != 0 { // 1 in 4 miss
+			c.Set(i, i)
+		}
+	}
+
+	mask := N - 1
+
+	b.ResetTimer()
+	for i := range b.N {
+		c.Get(i % mask)
+	}
+}

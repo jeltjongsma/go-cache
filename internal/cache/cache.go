@@ -11,7 +11,7 @@ import (
 )
 
 type Cache[K comparable, V any] struct {
-	shards []*Shard[K, V]
+	shards []Shard[K, V]
 	hasher *context.Hasher[K]
 	opts   *context.Options[K]
 	stats  *Stats
@@ -35,7 +35,7 @@ func NewCache[K comparable, V any](
 	}
 
 	// init shards
-	shards := make([]*Shard[K, V], opts.NumShards)
+	shards := make([]Shard[K, V], opts.NumShards)
 	shardCap := opts.Capacity / int(opts.NumShards)
 	for i := range opts.NumShards {
 		var pol policies.Policy[K]
@@ -92,7 +92,8 @@ func (c *Cache[K, V]) Del(key K) (success bool) {
 
 func (c *Cache[K, V]) Len() int {
 	sum := 0
-	for _, s := range c.shards {
+	for i := 0; i < len(c.shards); i++ {
+		s := &c.shards[i]
 		sum += len(s.store)
 	}
 	return sum
@@ -108,7 +109,7 @@ func (c *Cache[K, V]) Flush() {
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				s := c.shards[i]
+				s := &c.shards[i]
 				s.Flush()
 			}
 		}()
@@ -135,11 +136,12 @@ func (c *Cache[K, V]) Stats() *StatsSnapshot {
 
 func (c *Cache[K, V]) shardFor(key K) (*Shard[K, V], uint64) {
 	idx := c.hasher.Hash(key) % (uint64(len(c.shards)))
-	return c.shards[idx], idx
+	return &c.shards[idx], idx
 }
 
 func (c *Cache[K, V]) validate() error {
-	for _, s := range c.shards {
+	for i := 0; i < len(c.shards); i++ {
+		s := &c.shards[i]
 		if err := s.validate(); err != nil {
 			return err
 		}

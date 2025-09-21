@@ -24,8 +24,8 @@ type Shard[K comparable, V any] struct {
 	now        func() time.Time
 }
 
-func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) *Shard[K, V] {
-	return &Shard[K, V]{
+func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) Shard[K, V] {
+	return Shard[K, V]{
 		store:      make(map[K]Entry[V], cap),
 		policy:     policy,
 		cap:        cap,
@@ -36,31 +36,30 @@ func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultT
 }
 
 func (s *Shard[K, V]) SetWithTTL(key K, val V, ttl time.Duration) (success bool, evicted int) {
-	entry := &Entry[V]{
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	entry := Entry[V]{
 		val:       val,
 		expiresAt: s.now().Add(ttl),
 	}
-	s.mu.Lock()
 	s.expiry.PushWithTTL(key, ttl)
-	s.mu.Unlock()
 	return s.set(key, entry)
 }
 
 func (s *Shard[K, V]) Set(key K, val V) (success bool, evicted int) {
-	entry := &Entry[V]{
-		val:       val,
-		expiresAt: s.now().Add(s.defaultTTL),
-	}
-	s.mu.Lock()
-	s.expiry.PushStd(key)
-	s.mu.Unlock()
-	return s.set(key, entry)
-}
-
-func (s *Shard[K, V]) set(key K, entry *Entry[V]) (success bool, evicted int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	entry := Entry[V]{
+		val:       val,
+		expiresAt: s.now().Add(s.defaultTTL),
+	}
+	s.expiry.PushStd(key)
+	return s.set(key, entry)
+}
+
+func (s *Shard[K, V]) set(key K, entry Entry[V]) (success bool, evicted int) {
 	_, exists := s.store[key]
 
 	if !exists && s.cap > 0 {
@@ -82,7 +81,8 @@ func (s *Shard[K, V]) set(key K, entry *Entry[V]) (success bool, evicted int) {
 		}
 	}
 
-	s.store[key] = *entry
+	s.store[key] = entry
+
 	if exists {
 		s.policy.OnHit(key)
 	} else {
@@ -110,16 +110,18 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 		return zero, false
 	}
 
-	// only ran on hits
-	budget := 4
-	for i := 0; i < budget; i++ {
-		if !s.expiry.HasExpired() {
-			break
-		}
-		victim := s.expiry.PopMin().K
-		if _, ok := s.store[victim]; ok {
-			delete(s.store, victim)
-			s.policy.OnDel(victim)
+	if s.defaultTTL != 0 {
+		// only ran on hits
+		budget := 4
+		for i := 0; i < budget; i++ {
+			if !s.expiry.HasExpired() {
+				break
+			}
+			victim := s.expiry.PopMin().K
+			if _, ok := s.store[victim]; ok {
+				delete(s.store, victim)
+				s.policy.OnDel(victim)
+			}
 		}
 	}
 

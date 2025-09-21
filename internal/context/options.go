@@ -42,3 +42,8 @@ func (o *Options[K]) SetHasher(h *Hasher[K]) *Options[K] {
 	o.Hasher = h
 	return o
 }
+
+func (o *Options[K]) SetDefaultTTL(ttl time.Duration) *Options[K] {
+	o.DefaultTTL = ttl
+	return o
+}

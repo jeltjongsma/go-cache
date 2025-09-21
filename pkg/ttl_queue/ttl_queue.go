@@ -6,10 +6,10 @@ import (
 )
 
 type Entry[K comparable] struct {
-	K         K
 	expiresAt time.Time
 	index     int
 	seq       uint64
+	K         K
 }
 
 // Invariants:
@@ -71,6 +71,8 @@ func (t *TTLQueue[K]) PushWithTTL(k K, ttl time.Duration) {
 func (t *TTLQueue[K]) PushStd(k K) {
 	if e, ok := t.keys[k]; ok {
 		e.expiresAt = t.now().Add(t.ttl)
+		t.seq++
+		e.seq = t.seq
 		heap.Fix(t, e.index)
 		return
 	}
@@ -83,10 +85,10 @@ func (t *TTLQueue[K]) PushStd(k K) {
 
 // called by container/heap (never use yourself)
 func (t *TTLQueue[K]) Push(x any) {
-	t.seq++
 	entry := x.(*Entry[K])
-	entry.index = len(t.queue)
+	t.seq++
 	entry.seq = t.seq
+	entry.index = len(t.queue)
 	t.keys[entry.K] = entry
 	t.queue = append(t.queue, entry)
 }

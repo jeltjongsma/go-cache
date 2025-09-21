@@ -33,11 +33,9 @@ func (p *LRU[K]) OnHit(k K) {
 }
 
 func (p *LRU[K]) OnSet(k K) {
-	if n := p.nodes[k]; n != nil {
-		if n != p.Head {
-			p.detach(n)
-			p.insertFront(n)
-		}
+	if n := p.nodes[k]; n != nil && n != p.Head {
+		p.detach(n)
+		p.insertFront(n)
 		return
 	}
 	n := &Node[K]{key: k}
@@ -99,7 +97,7 @@ func (p *LRU[K]) insertFront(n *Node[K]) {
 	p.Head = n
 }
 
-func (p *LRU[K]) Validate() error {
+func (p *LRU[K]) validate() error {
 	current := p.Head
 	count := 0
 	// check if all nodes in list are in map
