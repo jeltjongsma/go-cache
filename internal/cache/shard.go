@@ -24,8 +24,8 @@ type Shard[K comparable, V any] struct {
 	now        func() time.Time
 }
 
-func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) Shard[K, V] {
-	return Shard[K, V]{
+func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) *Shard[K, V] {
+	return &Shard[K, V]{
 		store:      make(map[K]Entry[V], cap),
 		policy:     policy,
 		cap:        cap,

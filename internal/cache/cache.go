@@ -8,10 +8,11 @@ import (
 	"go-cache/internal/policies"
 	"runtime"
 	"sync"
+	"time"
 )
 
 type Cache[K comparable, V any] struct {
-	shards []Shard[K, V]
+	shards []*Shard[K, V]
 	hasher *context.Hasher[K]
 	opts   *context.Options[K]
 	stats  *Stats
@@ -35,7 +36,7 @@ func NewCache[K comparable, V any](
 	}
 
 	// init shards
-	shards := make([]Shard[K, V], opts.NumShards)
+	shards := make([]*Shard[K, V], opts.NumShards)
 	shardCap := opts.Capacity / int(opts.NumShards)
 	for i := range opts.NumShards {
 		var pol policies.Policy[K]
@@ -48,6 +49,7 @@ func NewCache[K comparable, V any](
 			return nil, fmt.Errorf("invalid policy type: %s", opts.Policy)
 		}
 		shards[i] = InitShard[K, V](pol, shardCap, opts.DefaultTTL)
+		StartJanitor(shards[i], 10*time.Second)
 	}
 
 	// init cache
@@ -63,8 +65,7 @@ func (c *Cache[K, V]) SetPolicy(p policies.Policy[K]) error {
 	if c.Len() != 0 {
 		return errors.New("cannot set policy on non-empty cache")
 	}
-	for i := 0; i < len(c.shards); i++ {
-		s := &c.shards[i]
+	for _, s := range c.shards {
 		s.policy = p
 	}
 	return nil
@@ -103,8 +104,7 @@ func (c *Cache[K, V]) Del(key K) (success bool) {
 
 func (c *Cache[K, V]) Len() int {
 	sum := 0
-	for i := 0; i < len(c.shards); i++ {
-		s := &c.shards[i]
+	for _, s := range c.shards {
 		sum += len(s.store)
 	}
 	return sum
@@ -120,7 +120,7 @@ func (c *Cache[K, V]) Flush() {
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				s := &c.shards[i]
+				s := c.shards[i]
 				s.Flush()
 			}
 		}()
@@ -147,12 +147,11 @@ func (c *Cache[K, V]) Stats() *StatsSnapshot {
 
 func (c *Cache[K, V]) shardFor(key K) (*Shard[K, V], uint64) {
 	idx := c.hasher.Hash(key) % (uint64(len(c.shards)))
-	return &c.shards[idx], idx
+	return c.shards[idx], idx
 }
 
 func (c *Cache[K, V]) validate() error {
-	for i := 0; i < len(c.shards); i++ {
-		s := &c.shards[i]
+	for _, s := range c.shards {
 		if err := s.validate(); err != nil {
 			return err
 		}

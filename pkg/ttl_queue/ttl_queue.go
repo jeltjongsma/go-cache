@@ -6,7 +6,7 @@ import (
 )
 
 type Entry[K comparable] struct {
-	expiresAt time.Time
+	ExpiresAt time.Time
 	index     int
 	seq       uint64
 	K         K
@@ -15,7 +15,7 @@ type Entry[K comparable] struct {
 // Invariants:
 //   - keys maps each K present in queue to its Entry.
 //   - entry.index is the current position in queue, or -1 when not present.
-//   - Less orders by (expiresAt, seq) ascending ⇒ min-heap.
+//   - Less orders by (ExpiresAt, seq) ascending ⇒ min-heap.
 type TTLQueue[K comparable] struct {
 	queue []*Entry[K]
 	ttl   time.Duration
@@ -41,10 +41,10 @@ func (t *TTLQueue[K]) Len() int {
 
 func (t *TTLQueue[K]) Less(i, j int) bool {
 	x, y := t.queue[i], t.queue[j]
-	if x.expiresAt.Equal(y.expiresAt) {
+	if x.ExpiresAt.Equal(y.ExpiresAt) {
 		return x.seq < y.seq
 	}
-	return x.expiresAt.Before(y.expiresAt)
+	return x.ExpiresAt.Before(y.ExpiresAt)
 }
 
 func (t *TTLQueue[K]) Swap(i, j int) {
@@ -55,7 +55,7 @@ func (t *TTLQueue[K]) Swap(i, j int) {
 
 func (t *TTLQueue[K]) PushWithTTL(k K, ttl time.Duration) {
 	if e, ok := t.keys[k]; ok {
-		e.expiresAt = t.now().Add(ttl)
+		e.ExpiresAt = t.now().Add(ttl)
 		t.seq++
 		e.seq = t.seq
 		heap.Fix(t, e.index)
@@ -63,14 +63,14 @@ func (t *TTLQueue[K]) PushWithTTL(k K, ttl time.Duration) {
 	}
 	entry := &Entry[K]{
 		K:         k,
-		expiresAt: t.now().Add(ttl),
+		ExpiresAt: t.now().Add(ttl),
 	}
 	heap.Push(t, entry)
 }
 
 func (t *TTLQueue[K]) PushStd(k K) {
 	if e, ok := t.keys[k]; ok {
-		e.expiresAt = t.now().Add(t.ttl)
+		e.ExpiresAt = t.now().Add(t.ttl)
 		t.seq++
 		e.seq = t.seq
 		heap.Fix(t, e.index)
@@ -78,7 +78,7 @@ func (t *TTLQueue[K]) PushStd(k K) {
 	}
 	entry := &Entry[K]{
 		K:         k,
-		expiresAt: t.now().Add(t.ttl),
+		ExpiresAt: t.now().Add(t.ttl),
 	}
 	heap.Push(t, entry)
 }
@@ -120,7 +120,7 @@ func (t *TTLQueue[K]) HasExpired() bool {
 		return false
 	}
 	e := t.queue[0]
-	if e.expiresAt.Before(t.now()) || e.expiresAt.Equal(t.now()) {
+	if e.ExpiresAt.Before(t.now()) || e.ExpiresAt.Equal(t.now()) {
 		return true
 	}
 	return false
@@ -131,7 +131,7 @@ func (t *TTLQueue[K]) Update(k K, ttl time.Duration) bool {
 	if !ok {
 		return false
 	}
-	entry.expiresAt = t.now().Add(ttl)
+	entry.ExpiresAt = t.now().Add(ttl)
 	t.seq++
 	entry.seq = t.seq
 	heap.Fix(t, entry.index)

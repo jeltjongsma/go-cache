@@ -33,9 +33,9 @@ func TestLess(t *testing.T) {
 		return n
 	}
 	q.queue = []*Entry[int]{
-		{expiresAt: q.now(), seq: 0},
-		{expiresAt: q.now(), seq: 1},
-		{expiresAt: q.now().Add(50), seq: 0},
+		{ExpiresAt: q.now(), seq: 0},
+		{ExpiresAt: q.now(), seq: 1},
+		{ExpiresAt: q.now().Add(50), seq: 0},
 	}
 
 	if q.Less(0, 1) != true {
@@ -71,7 +71,7 @@ func TestPush(t *testing.T) {
 	}
 	e := &Entry[int]{
 		K:         1,
-		expiresAt: q.now(),
+		ExpiresAt: q.now(),
 	}
 
 	q.Push(e)
@@ -89,8 +89,8 @@ func TestPush(t *testing.T) {
 	if got.K != 1 {
 		t.Errorf("expected k=1, got %d", got.K)
 	}
-	if !got.expiresAt.Equal(e.expiresAt) {
-		t.Errorf("got different expiresAt's")
+	if !got.ExpiresAt.Equal(e.ExpiresAt) {
+		t.Errorf("got different ExpiresAt's")
 	}
 	if _, ok := q.keys[1]; !ok {
 		t.Errorf("k=1 not in map")
@@ -113,8 +113,8 @@ func TestPushWithTTL_NewEntry(t *testing.T) {
 	if got.K != 1 {
 		t.Errorf("expected k=1, got %d", got.K)
 	}
-	if !got.expiresAt.Equal(n.Add(50)) {
-		t.Errorf("expected ttl + 50, got %v", got.expiresAt)
+	if !got.ExpiresAt.Equal(n.Add(50)) {
+		t.Errorf("expected ttl + 50, got %v", got.ExpiresAt)
 	}
 }
 
@@ -135,8 +135,8 @@ func TestPushWithTTL_Duplicate(t *testing.T) {
 	if got.K != 1 {
 		t.Errorf("expected k=1, got %d", got.K)
 	}
-	if !got.expiresAt.Equal(n.Add(50)) {
-		t.Errorf("expected ttl + 50, got %v", got.expiresAt)
+	if !got.ExpiresAt.Equal(n.Add(50)) {
+		t.Errorf("expected ttl + 50, got %v", got.ExpiresAt)
 	}
 }
 
@@ -156,8 +156,8 @@ func TestPushStd_NewEntry(t *testing.T) {
 	if got.K != 1 {
 		t.Errorf("expected k=1, got %d", got.K)
 	}
-	if !got.expiresAt.Equal(n.Add(100)) {
-		t.Errorf("expected ttl + 100, got %v", got.expiresAt)
+	if !got.ExpiresAt.Equal(n.Add(100)) {
+		t.Errorf("expected ttl + 100, got %v", got.ExpiresAt)
 	}
 }
 
@@ -178,8 +178,8 @@ func TestPushStd_Duplicate(t *testing.T) {
 	if got.K != 1 {
 		t.Errorf("expected k=1, got %d", got.K)
 	}
-	if !got.expiresAt.Equal(n.Add(100)) {
-		t.Errorf("expected ttl + 100, got %v", got.expiresAt)
+	if !got.ExpiresAt.Equal(n.Add(100)) {
+		t.Errorf("expected ttl + 100, got %v", got.ExpiresAt)
 	}
 }
 
@@ -245,9 +245,9 @@ func TestHasExpired(t *testing.T) {
 	}
 
 	q.queue = []*Entry[int]{
-		{expiresAt: n.Add(-50)},
-		{expiresAt: n},
-		{expiresAt: n.Add(50)},
+		{ExpiresAt: n.Add(-50)},
+		{ExpiresAt: n},
+		{ExpiresAt: n.Add(50)},
 	}
 
 	if !q.HasExpired() {
@@ -284,8 +284,8 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("expected true, got false")
 	}
 	got, _ := q.Peek()
-	if !got.expiresAt.Equal(n.Add(50)) {
-		t.Errorf("expected ttl + 50, got %v", got.expiresAt)
+	if !got.ExpiresAt.Equal(n.Add(50)) {
+		t.Errorf("expected ttl + 50, got %v", got.ExpiresAt)
 	}
 	if got.seq != q.seq {
 		t.Errorf("expected seq=%d, got %d", q.seq, got.seq)

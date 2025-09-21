@@ -55,7 +55,7 @@ func BenchmarkTTLQueue_Push(b *testing.B) {
 	const N = 1 << 16
 	entries := make([]Entry[int], N)
 	for i := range N {
-		entries[i] = Entry[int]{K: i, expiresAt: n.Add(300_000), index: i, seq: uint64(i)}
+		entries[i] = Entry[int]{K: i, ExpiresAt: n.Add(300_000), index: i, seq: uint64(i)}
 	}
 
 	mask := N - 1
