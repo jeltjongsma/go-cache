@@ -59,6 +59,17 @@ func NewCache[K comparable, V any](
 	}, nil
 }
 
+func (c *Cache[K, V]) SetPolicy(p policies.Policy[K]) error {
+	if c.Len() != 0 {
+		return errors.New("cannot set policy on non-empty cache")
+	}
+	for i := 0; i < len(c.shards); i++ {
+		s := &c.shards[i]
+		s.policy = p
+	}
+	return nil
+}
+
 func (c *Cache[K, V]) Set(key K, val V) (success bool, evicted int) {
 	shard, _ := c.shardFor(key)
 	success, evicted = shard.Set(key, val)

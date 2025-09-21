@@ -4,16 +4,6 @@ import (
 	"sync/atomic"
 )
 
-type CacheInterface[K comparable, V any] interface {
-	Set(key K, val V) (success bool, evicted int)
-	Get(key K) (V, bool)
-	Peek(key K) (V, bool)
-	Del(key K) bool
-	Len() int
-	Flush()
-	Stats() *StatsSnapshot
-}
-
 type Stats struct {
 	Hits      atomic.Uint64
 	Misses    atomic.Uint64

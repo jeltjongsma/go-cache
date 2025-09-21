@@ -78,6 +78,21 @@ func TestCache_New(t *testing.T) {
 	}
 }
 
+func TestCache_SetPolicy(t *testing.T) {
+	c, _ := NewCache[int, int](context.NewOptions[int]())
+	err := c.SetPolicy(policies.NewLRU[int]())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	c.Set(1, 1)
+
+	err = c.SetPolicy(policies.NewFIFO[int]())
+	if err == nil {
+		t.Errorf("expected error, got nil")
+	}
+}
+
 func TestCache_Set(t *testing.T) {
 	c, err := NewCache[int, int](context.NewOptions[int]().
 		SetCapacity(100).
