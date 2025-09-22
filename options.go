@@ -17,7 +17,7 @@ type Options[K comparable] struct {
 
 func NewOptions[K comparable]() *Options[K] {
 	return &Options[K]{
-		Capacity:   100,
+		Capacity:   1000,
 		Policy:     policies.TypeFIFO,
 		NumShards:  16,
 		Hasher:     hasher.NewHasher[K](nil),
