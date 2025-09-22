@@ -1,9 +1,10 @@
 package cache
 
 import (
-	"go-cache/internal/policies"
 	"testing"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
 )
 
 func TestJanitor_Start(t *testing.T) {

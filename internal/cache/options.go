@@ -1,9 +1,10 @@
 package cache
 
 import (
-	"go-cache/internal/policies"
-	"go-cache/pkg/hasher"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
+	"github.com/jeltjongsma/go-cache/pkg/hasher"
 )
 
 type Options[K comparable] struct {

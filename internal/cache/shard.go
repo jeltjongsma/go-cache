@@ -2,11 +2,12 @@ package cache
 
 import (
 	"errors"
-	"go-cache/internal/policies"
-	"go-cache/pkg/ttl_queue"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
+	"github.com/jeltjongsma/go-cache/pkg/ttl_queue"
 )
 
 type Entry[V any] struct {

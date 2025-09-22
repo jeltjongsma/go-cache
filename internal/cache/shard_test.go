@@ -1,9 +1,10 @@
 package cache
 
 import (
-	"go-cache/internal/policies"
 	"testing"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
 )
 
 func TestShard_InitShard(t *testing.T) {

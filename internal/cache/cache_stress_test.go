@@ -1,12 +1,13 @@
 package cache
 
 import (
-	"go-cache/internal/policies"
 	"math/rand"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
 )
 
 func TestCache(t *testing.T) {

@@ -4,11 +4,12 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"go-cache/internal/policies"
-	"go-cache/pkg/hasher"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/jeltjongsma/go-cache/internal/policies"
+	"github.com/jeltjongsma/go-cache/pkg/hasher"
 )
 
 type Cache[K comparable, V any] struct {
