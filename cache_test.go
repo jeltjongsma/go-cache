@@ -289,8 +289,6 @@ func TestCache_shardFor(t *testing.T) {
 	}
 }
 
-// FIXME: Can't predict all keys are actually being set, due to hash function
-// Can't check if something got evicted so can't count properly still
 func TestCache_Len(t *testing.T) {
 	c, err := NewCache[int, int](NewOptions[int]().
 		SetCapacity(50).

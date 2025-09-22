@@ -1,6 +1,5 @@
 package cache
 
-// TODO: Implement tests once more features are added (e.g. hooks for logging etc.)
 import (
 	"errors"
 	"fmt"
