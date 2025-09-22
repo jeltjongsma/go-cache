@@ -1,7 +1,8 @@
-package context
+package cache
 
 import (
 	"go-cache/internal/policies"
+	"go-cache/pkg/hasher"
 	"time"
 )
 
@@ -9,7 +10,7 @@ type Options[K comparable] struct {
 	Capacity   int
 	Policy     policies.PolicyType
 	NumShards  int
-	Hasher     *Hasher[K]
+	Hasher     *hasher.Hasher[K]
 	DefaultTTL time.Duration
 }
 
@@ -18,8 +19,8 @@ func NewOptions[K comparable]() *Options[K] {
 		Capacity:   100,
 		Policy:     policies.TypeFIFO,
 		NumShards:  16,
-		Hasher:     NewHasher[K](nil),
-		DefaultTTL: 300_000,
+		Hasher:     hasher.NewHasher[K](nil),
+		DefaultTTL: 5 * time.Minute,
 	}
 }
 
@@ -38,7 +39,7 @@ func (o *Options[K]) SetNumShards(n int) *Options[K] {
 	return o
 }
 
-func (o *Options[K]) SetHasher(h *Hasher[K]) *Options[K] {
+func (o *Options[K]) SetHasher(h *hasher.Hasher[K]) *Options[K] {
 	o.Hasher = h
 	return o
 }

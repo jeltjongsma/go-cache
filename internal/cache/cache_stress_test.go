@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"go-cache/internal/context"
 	"go-cache/internal/policies"
 	"math/rand"
 	"runtime"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	opts := context.NewOptions[int]().
+	opts := NewOptions[int]().
 		SetCapacity(100_000).
 		SetPolicy(policies.TypeLRU).
 		SetNumShards(128)
@@ -91,7 +90,7 @@ func BenchmarkBaselineGet(b *testing.B) {
 }
 
 func BenchmarkSet(b *testing.B) {
-	opts := context.NewOptions[int]().
+	opts := NewOptions[int]().
 		SetCapacity(b.N).
 		SetPolicy(policies.TypeLRU).
 		SetNumShards(128)
@@ -107,7 +106,7 @@ func BenchmarkSet(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	opts := context.NewOptions[int]().
+	opts := NewOptions[int]().
 		SetCapacity(b.N).
 		SetPolicy(policies.TypeLRU).
 		SetNumShards(128).

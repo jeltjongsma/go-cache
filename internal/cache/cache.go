@@ -4,8 +4,8 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"go-cache/internal/context"
 	"go-cache/internal/policies"
+	"go-cache/pkg/hasher"
 	"runtime"
 	"sync"
 	"time"
@@ -13,13 +13,13 @@ import (
 
 type Cache[K comparable, V any] struct {
 	shards []*Shard[K, V]
-	hasher *context.Hasher[K]
-	opts   *context.Options[K]
+	hasher *hasher.Hasher[K]
+	opts   *Options[K]
 	stats  *Stats
 }
 
 func NewCache[K comparable, V any](
-	opts *context.Options[K],
+	opts *Options[K],
 ) (*Cache[K, V], error) {
 	// check input
 	if opts.Capacity < 0 {
@@ -69,6 +69,13 @@ func (c *Cache[K, V]) SetPolicy(p policies.Policy[K]) error {
 		s.policy = p
 	}
 	return nil
+}
+
+func (c *Cache[K, V]) SetWithTTL(key K, val V, ttl time.Duration) (success bool, evicted int) {
+	shard, _ := c.shardFor(key)
+	success, evicted = shard.SetWithTTL(key, val, ttl)
+	c.stats.Evictions.Add(uint64(evicted))
+	return
 }
 
 func (c *Cache[K, V]) Set(key K, val V) (success bool, evicted int) {
