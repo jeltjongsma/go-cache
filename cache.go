@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jeltjongsma/go-cache/internal/policies"
 	"github.com/jeltjongsma/go-cache/pkg/hasher"
+	"github.com/jeltjongsma/go-cache/pkg/policies"
 )
 
 type Cache[K comparable, V any] struct {

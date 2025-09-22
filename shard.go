@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jeltjongsma/go-cache/internal/policies"
+	"github.com/jeltjongsma/go-cache/pkg/policies"
 	"github.com/jeltjongsma/go-cache/pkg/ttl_queue"
 )
 

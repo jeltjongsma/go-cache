@@ -3,8 +3,8 @@ package cache
 import (
 	"time"
 
-	"github.com/jeltjongsma/go-cache/internal/policies"
 	"github.com/jeltjongsma/go-cache/pkg/hasher"
+	"github.com/jeltjongsma/go-cache/pkg/policies"
 )
 
 type Options[K comparable] struct {

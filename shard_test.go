@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jeltjongsma/go-cache/internal/policies"
+	"github.com/jeltjongsma/go-cache/pkg/policies"
 )
 
 func TestShard_InitShard(t *testing.T) {

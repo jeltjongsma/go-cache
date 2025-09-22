@@ -3,8 +3,8 @@ package cache
 import (
 	"testing"
 
-	"github.com/jeltjongsma/go-cache/internal/policies"
 	"github.com/jeltjongsma/go-cache/pkg/hasher"
+	"github.com/jeltjongsma/go-cache/pkg/policies"
 )
 
 func TestCache_New(t *testing.T) {
