@@ -77,6 +77,7 @@ func (j *Janitor[K, V]) run(ctx context.Context, initialDelay time.Duration) {
 			}
 			j.shard.mu.Unlock()
 
+			// drain timer
 			if !timer.Stop() {
 				select {
 				case <-timer.C:

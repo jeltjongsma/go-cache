@@ -15,6 +15,12 @@ type Options[K comparable] struct {
 	DefaultTTL time.Duration
 }
 
+// Options configures a cache instance. All setters return *Options, so they
+// can be chained:
+//
+//	opts := NewOptions[int]().
+//	    SetPolicy(policies.TypeLRU).
+//	    SetCapacity(1000)
 func NewOptions[K comparable]() *Options[K] {
 	return &Options[K]{
 		Capacity:   1000,

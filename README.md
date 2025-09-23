@@ -11,12 +11,13 @@ Built to explore caching internals, eviction policies, TTL management, and perfo
 - Thread-safe stats tracking (hits, misses, evictions, etc.)
 
 ## API overview
-- `NewOptions[K comparable]() *Options[K]` - returns default options, which can be modified with setters for:
-    - `.SetCapacity(c int)` 
+- `NewOptions[K comparable]() *Options[K]` - returns default options. 
+Setters return `*Options[K]`, so they can be chained:
+    - `.SetCapacity(c int)` - set to 0 for no limit
     - `.SetPolicy(p PolicyType)` 
     - `.SetNumShards(n int)` 
     - `.SetHasher(h *Hasher[K])` 
-    - `.SetDefaultTTL(ttl time.Duration)`
+    - `.SetDefaultTTL(ttl time.Duration)` - set to 0 for no expiration
 - `NewCache[K comparable, V any](*Options[K]) (*Cache[K, V], error)`
 - `.Set(key K, val V) (success bool, evicted int)` 
 - `.SetWithTTL(key K, val V, ttl time.Duration) (success bool, evicted int)`

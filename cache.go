@@ -1,3 +1,4 @@
+// Simple concurrent, sharded, in-memory cache.
 package cache
 
 import (
@@ -18,6 +19,11 @@ type Cache[K comparable, V any] struct {
 	stats  *Stats
 }
 
+// Cache is configured through *Options[K].
+// Checks if the input is valid and returns an error on invalid options:
+//   - Capacity must be 0 or larger, clamped to 0 on input < 0  (cap == 0 means no limit).
+//   - NumShards must be greater than 0 and an exponential of 2.
+//   - Hasher cannot be nil.
 func NewCache[K comparable, V any](
 	opts *Options[K],
 ) (*Cache[K, V], error) {
@@ -49,7 +55,11 @@ func NewCache[K comparable, V any](
 			return nil, fmt.Errorf("invalid policy type: %s", opts.Policy)
 		}
 		shards[i] = InitShard[K, V](pol, shardCap, opts.DefaultTTL)
-		StartJanitor(shards[i], 10*time.Second)
+	}
+	if opts.DefaultTTL != 0 {
+		for i := range opts.NumShards {
+			StartJanitor(shards[i], 10*time.Second)
+		}
 	}
 
 	// init cache
@@ -61,6 +71,8 @@ func NewCache[K comparable, V any](
 	}, nil
 }
 
+// SetPolicy sets a custom policy.
+// Will return an error if the cache is not empty.
 func (c *Cache[K, V]) SetPolicy(p policies.Policy[K]) error {
 	if c.Len() != 0 {
 		return errors.New("cannot set policy on non-empty cache")
@@ -96,6 +108,7 @@ func (c *Cache[K, V]) Get(key K) (val V, hit bool) {
 	return
 }
 
+// Peek is like get but won't affect eviction policy.
 func (c *Cache[K, V]) Peek(key K) (V, bool) {
 	shard, _ := c.shardFor(key)
 	return shard.Peek(key)

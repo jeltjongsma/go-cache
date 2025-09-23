@@ -12,10 +12,6 @@ type Entry[K comparable] struct {
 	K         K
 }
 
-// Invariants:
-//   - keys maps each K present in queue to its Entry.
-//   - entry.index is the current position in queue, or -1 when not present.
-//   - Less orders by (ExpiresAt, seq) ascending ⇒ min-heap.
 type TTLQueue[K comparable] struct {
 	queue []*Entry[K]
 	ttl   time.Duration
@@ -24,6 +20,8 @@ type TTLQueue[K comparable] struct {
 	seq   uint64
 }
 
+// TTLQueue is an expiration based priority queue.
+// The queue is ordered by (ExpiresAt, seq) ascending.
 func NewTTLQueue[K comparable](defaultTTL time.Duration) *TTLQueue[K] {
 	q := &TTLQueue[K]{
 		ttl:  defaultTTL,
@@ -53,6 +51,8 @@ func (t *TTLQueue[K]) Swap(i, j int) {
 	t.queue[j].index = j
 }
 
+// PushWithTTL pushes a new entry onto the heap with a given TTL.
+// If the entry already exists the TTL will be updated and get bubbled up.
 func (t *TTLQueue[K]) PushWithTTL(k K, ttl time.Duration) {
 	if e, ok := t.keys[k]; ok {
 		e.ExpiresAt = t.now().Add(ttl)
@@ -68,6 +68,8 @@ func (t *TTLQueue[K]) PushWithTTL(k K, ttl time.Duration) {
 	heap.Push(t, entry)
 }
 
+// PushStd pushes a new entry onto the heap with the default TTL.
+// If the entry already exists the TTL will be updated and get bubbled up.
 func (t *TTLQueue[K]) PushStd(k K) {
 	if e, ok := t.keys[k]; ok {
 		e.ExpiresAt = t.now().Add(t.ttl)
@@ -83,7 +85,7 @@ func (t *TTLQueue[K]) PushStd(k K) {
 	heap.Push(t, entry)
 }
 
-// called by container/heap (never use yourself)
+// Push is called by container/heap (never use yourself).
 func (t *TTLQueue[K]) Push(x any) {
 	entry := x.(*Entry[K])
 	t.seq++
@@ -93,11 +95,12 @@ func (t *TTLQueue[K]) Push(x any) {
 	t.queue = append(t.queue, entry)
 }
 
+// PopMin pops the entry that expires earliest.
 func (t *TTLQueue[K]) PopMin() *Entry[K] {
 	return heap.Pop(t).(*Entry[K])
 }
 
-// called by container/heap (never use yourself)
+// Pop is called by container/heap (never use yourself).
 func (t *TTLQueue[K]) Pop() any {
 	l := len(t.queue)
 	entry := t.queue[l-1]
@@ -108,6 +111,7 @@ func (t *TTLQueue[K]) Pop() any {
 	return entry
 }
 
+// Peek returns the entry at the front of the queue (earliest expiration).
 func (t *TTLQueue[K]) Peek() (*Entry[K], bool) {
 	if len(t.queue) == 0 {
 		return nil, false
@@ -115,6 +119,7 @@ func (t *TTLQueue[K]) Peek() (*Entry[K], bool) {
 	return t.queue[0], true
 }
 
+// HasExpired returns whether the first entry of the queue is expired.
 func (t *TTLQueue[K]) HasExpired() bool {
 	if len(t.queue) == 0 {
 		return false
@@ -156,6 +161,8 @@ func (t *TTLQueue[K]) Reset() {
 	t.seq = 0
 }
 
+// SetNow sets the internal `now` function.
+// Useful for deterministic tests.
 func (t *TTLQueue[K]) SetNow(now func() time.Time) {
 	t.now = now
 }

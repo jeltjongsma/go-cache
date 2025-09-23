@@ -130,7 +130,7 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 	return entry.val, true
 }
 
-// no policy effects
+// Peek is like get but won't affect eviction policy.
 func (s *Shard[K, V]) Peek(key K) (V, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
