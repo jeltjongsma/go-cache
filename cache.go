@@ -8,22 +8,22 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jeltjongsma/go-cache/internal"
+	"github.com/jeltjongsma/go-cache/internal/core"
 	"github.com/jeltjongsma/go-cache/pkg/hasher"
 	"github.com/jeltjongsma/go-cache/pkg/policies"
 )
 
 type Cache[K comparable, V any] struct {
-	shards []*internal.Shard[K, V]
+	shards []*core.Shard[K, V]
 	hasher *hasher.Hasher[K]
 	opts   *Options[K]
-	stats  *internal.Stats
+	stats  *core.Stats
 }
 
 // Cache is configured through *Options[K].
 // Checks if the input is valid and returns an error on invalid options:
 //   - Capacity must be 0 or larger, clamped to 0 on input < 0  (cap == 0 means no limit).
-//   - Numinternal.Shards must be greater than 0 and an exponential of 2.
+//   - NumShards must be greater than 0 and an exponential of 2.
 //   - Hasher cannot be nil.
 func NewCache[K comparable, V any](
 	opts *Options[K],
@@ -43,7 +43,7 @@ func NewCache[K comparable, V any](
 	}
 
 	// init shards
-	shards := make([]*internal.Shard[K, V], opts.NumShards)
+	shards := make([]*core.Shard[K, V], opts.NumShards)
 	shardCap := opts.Capacity / int(opts.NumShards)
 	for i := range opts.NumShards {
 		var pol policies.Policy[K]
@@ -55,11 +55,11 @@ func NewCache[K comparable, V any](
 		default:
 			return nil, fmt.Errorf("invalid policy type: %s", opts.Policy)
 		}
-		shards[i] = internal.InitShard[K, V](pol, shardCap, opts.DefaultTTL)
+		shards[i] = core.InitShard[K, V](pol, shardCap, opts.DefaultTTL)
 	}
 	if opts.DefaultTTL != 0 {
 		for i := range opts.NumShards {
-			internal.StartJanitor(shards[i], 10*time.Second)
+			core.StartJanitor(shards[i], 10*time.Second)
 		}
 	}
 
@@ -68,7 +68,7 @@ func NewCache[K comparable, V any](
 		shards: shards,
 		hasher: opts.Hasher,
 		opts:   opts,
-		stats:  &internal.Stats{},
+		stats:  &core.Stats{},
 	}, nil
 }
 
@@ -156,8 +156,8 @@ func (c *Cache[K, V]) Flush() {
 	c.stats.Flushes.Add(1)
 }
 
-func (c *Cache[K, V]) Stats() *internal.StatsSnapshot {
-	return &internal.StatsSnapshot{
+func (c *Cache[K, V]) Stats() *core.StatsSnapshot {
+	return &core.StatsSnapshot{
 		Hits:      c.stats.Hits.Load(),
 		Misses:    c.stats.Misses.Load(),
 		Evictions: c.stats.Evictions.Load(),
@@ -166,7 +166,7 @@ func (c *Cache[K, V]) Stats() *internal.StatsSnapshot {
 	}
 }
 
-func (c *Cache[K, V]) shardFor(key K) (*internal.Shard[K, V], uint64) {
+func (c *Cache[K, V]) shardFor(key K) (*core.Shard[K, V], uint64) {
 	idx := c.hasher.Hash(key) % (uint64(len(c.shards)))
 	return c.shards[idx], idx
 }
