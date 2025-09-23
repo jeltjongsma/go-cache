@@ -59,6 +59,7 @@ func main() {
 
 	val, ok := c.Get(1)
 	fmt.Println(val, ok)
+
 	c.SetWithTTL(2, "world", 2*time.Second)
 	time.Sleep(3 * time.Second)
 
@@ -85,7 +86,7 @@ go test ./... -bench=. -benchmem
 ## Ideas for future work
 - Implement support for callbacks (e.g., `(*Options).OnEvict(k K, victim V)`) to allow for logging, metrics, etc.
 - Implement more eviction policies (e.g., LFU, ARC)
-- Improve stat tracking (e.g., expirations, hot keys)
+- Improve stats tracking (e.g., expirations, hot keys)
 - Improve performance:
 	- Increase benchmark coverage
 	- Explore optimal number of shards
