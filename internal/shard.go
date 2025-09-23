@@ -1,4 +1,4 @@
-package cache
+package internal
 
 import (
 	"errors"
@@ -17,18 +17,18 @@ type Entry[V any] struct {
 
 type Shard[K comparable, V any] struct {
 	mu         sync.RWMutex
-	store      map[K]Entry[V]
-	policy     policies.Policy[K]
+	Store      map[K]Entry[V]
+	Policy     policies.Policy[K]
 	cap        int
 	expiry     *ttl_queue.TTLQueue[K]
 	defaultTTL time.Duration
 	now        func() time.Time
 }
 
-func InitShard[K comparable, V any](policy policies.Policy[K], cap int, defaultTTL time.Duration) *Shard[K, V] {
+func InitShard[K comparable, V any](Policy policies.Policy[K], cap int, defaultTTL time.Duration) *Shard[K, V] {
 	return &Shard[K, V]{
-		store:      make(map[K]Entry[V], cap),
-		policy:     policy,
+		Store:      make(map[K]Entry[V], cap),
+		Policy:     Policy,
 		cap:        cap,
 		expiry:     ttl_queue.NewTTLQueue[K](defaultTTL),
 		defaultTTL: defaultTTL,
@@ -61,18 +61,18 @@ func (s *Shard[K, V]) Set(key K, val V) (success bool, evicted int) {
 }
 
 func (s *Shard[K, V]) set(key K, entry Entry[V]) (success bool, evicted int) {
-	_, exists := s.store[key]
+	_, exists := s.Store[key]
 
 	if !exists && s.cap > 0 {
 		attempts := 0
-		for len(s.store) >= s.cap {
-			victim, ok := s.policy.Evict()
+		for len(s.Store) >= s.cap {
+			victim, ok := s.Policy.Evict()
 			if !ok {
 				return false, evicted
 			}
-			if _, present := s.store[victim]; present {
-				delete(s.store, victim)
-				evicted++ // only increases when evicted from store (not policy)
+			if _, present := s.Store[victim]; present {
+				delete(s.Store, victim)
+				evicted++ // only increases when evicted from Store (not Policy)
 			} else {
 				attempts++
 				if attempts > s.cap {
@@ -82,12 +82,12 @@ func (s *Shard[K, V]) set(key K, entry Entry[V]) (success bool, evicted int) {
 		}
 	}
 
-	s.store[key] = entry
+	s.Store[key] = entry
 
 	if exists {
-		s.policy.OnHit(key)
+		s.Policy.OnHit(key)
 	} else {
-		s.policy.OnSet(key)
+		s.Policy.OnSet(key)
 	}
 	return true, evicted
 }
@@ -96,7 +96,7 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	entry, ok := s.store[key]
+	entry, ok := s.Store[key]
 	if !ok {
 		var zero V
 		return zero, false
@@ -104,8 +104,8 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 
 	now := s.now()
 	if s.defaultTTL != 0 && (entry.expiresAt.Before(now) || entry.expiresAt.Equal(now)) {
-		delete(s.store, key)
-		s.policy.OnDel(key)
+		delete(s.Store, key)
+		s.Policy.OnDel(key)
 		s.expiry.Remove(key)
 		var zero V
 		return zero, false
@@ -119,23 +119,23 @@ func (s *Shard[K, V]) Get(key K) (V, bool) {
 				break
 			}
 			victim := s.expiry.PopMin().K
-			if _, ok := s.store[victim]; ok {
-				delete(s.store, victim)
-				s.policy.OnDel(victim)
+			if _, ok := s.Store[victim]; ok {
+				delete(s.Store, victim)
+				s.Policy.OnDel(victim)
 			}
 		}
 	}
 
-	s.policy.OnHit(key)
+	s.Policy.OnHit(key)
 	return entry.val, true
 }
 
-// Peek is like get but won't affect eviction policy.
+// Peek is like get but won't affect eviction Policy.
 func (s *Shard[K, V]) Peek(key K) (V, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	entry, ok := s.store[key]
+	entry, ok := s.Store[key]
 	if !ok {
 		var zero V
 		return zero, false
@@ -147,11 +147,11 @@ func (s *Shard[K, V]) Del(key K) (success bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.store[key]; !ok {
+	if _, ok := s.Store[key]; !ok {
 		return false
 	}
-	delete(s.store, key)
-	s.policy.OnDel(key)
+	delete(s.Store, key)
+	s.Policy.OnDel(key)
 	return true
 }
 
@@ -159,15 +159,15 @@ func (s *Shard[K, V]) Flush() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	clear(s.store)
-	s.policy.Reset()
+	clear(s.Store)
+	s.Policy.Reset()
 	s.expiry.Reset()
 }
 
 func (s *Shard[K, V]) Equals(o *Shard[K, V]) bool {
-	sPtype, sKtype := s.policy.Type()
-	oPtype, oKtype := o.policy.Type()
-	return reflect.DeepEqual(s.store, o.store) &&
+	sPtype, sKtype := s.Policy.Type()
+	oPtype, oKtype := o.Policy.Type()
+	return reflect.DeepEqual(s.Store, o.Store) &&
 		s.cap == o.cap &&
 		sPtype == oPtype &&
 		sKtype == oKtype
@@ -178,14 +178,14 @@ func (s *Shard[K, V]) setNow(now func() time.Time) {
 	s.expiry.SetNow(now)
 }
 
-func (s *Shard[K, V]) validate() error {
+func (s *Shard[K, V]) Validate() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if s.expiry.Len() < len(s.store) {
+	if s.expiry.Len() < len(s.Store) {
 		return errors.New("expiry out of sync")
 	}
-	if len(s.store) != s.policy.Len() {
+	if len(s.Store) != s.Policy.Len() {
 		return errors.New("policy out of sync")
 	}
 	return nil

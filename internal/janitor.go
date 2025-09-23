@@ -1,4 +1,4 @@
-package cache
+package internal
 
 import (
 	"context"
@@ -45,9 +45,9 @@ func (j *Janitor[K, V]) run(ctx context.Context, initialDelay time.Duration) {
 			j.shard.mu.Lock()
 			for j.shard.expiry.HasExpired() {
 				victim := j.shard.expiry.PopMin().K
-				if _, ok := j.shard.store[victim]; ok {
-					delete(j.shard.store, victim)
-					j.shard.policy.OnDel(victim)
+				if _, ok := j.shard.Store[victim]; ok {
+					delete(j.shard.Store, victim)
+					j.shard.Policy.OnDel(victim)
 					expired++
 				}
 			}
@@ -61,9 +61,9 @@ func (j *Janitor[K, V]) run(ctx context.Context, initialDelay time.Duration) {
 			// cleanup
 			for j.shard.expiry.HasExpired() {
 				victim := j.shard.expiry.PopMin().K
-				if _, ok := j.shard.store[victim]; ok {
-					delete(j.shard.store, victim)
-					j.shard.policy.OnDel(victim)
+				if _, ok := j.shard.Store[victim]; ok {
+					delete(j.shard.Store, victim)
+					j.shard.Policy.OnDel(victim)
 					expired++
 				}
 			}
