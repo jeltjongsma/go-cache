@@ -22,9 +22,9 @@ type Cache[K comparable, V any] struct {
 
 // Cache is configured through *Options[K].
 // Checks if the input is valid and returns an error on invalid options:
-//   - Capacity must be 0 or larger, clamped to 0 on input < 0  (cap == 0 means no limit).
-//   - NumShards must be greater than 0 and an exponential of 2.
-//   - Hasher cannot be nil.
+//   - Capacity must be postive, clamped to 0 on input < 0  (cap == 0 means no limit)
+//   - NumShards must be greater than 0 and an exponential of 2 (nShards = 2^k)
+//   - Hasher cannot be nil
 func NewCache[K comparable, V any](
 	opts *Options[K],
 ) (*Cache[K, V], error) {
