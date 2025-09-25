@@ -9,6 +9,7 @@ Built to explore caching internals, eviction policies, TTL management, and perfo
 - Support for per-entry TTLs
 - Concurrent safe via sharded locks
 - Thread-safe stats tracking (hits, misses, evictions, etc.)
+- Background janitor to reduce stale entries
 
 ## API overview
 - `NewOptions[K comparable]() *Options[K]` - returns default options. 
